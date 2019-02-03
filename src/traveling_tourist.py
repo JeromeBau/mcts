@@ -1,3 +1,5 @@
+from typing import List
+
 from src.game import Game
 
 
@@ -7,6 +9,16 @@ class TravelingTourist(Game):
         self.home_town = "Berlin"
         self.possible_moves = ["Berlin", "Copenhagen", "Paris", "Lisbon"]
         self.current_game_state = []
+
+    def _check_game_correctly_initiated(self):
+        duplicates = set([city for city in self.possible_moves if self.possible_moves.count(city) > 1])
+        assert len(duplicates) == 0, \
+            "Found the following duplicates in possible moves: {dups}".format(dups=duplicates)
+        raise NotImplementedError
+
+    def _check_game_over(self):
+        print("NOT IMPLEMENTED")
+        pass
 
     def _check_move_possible(self, move: str):
         """ Check if move is allowed
@@ -18,6 +30,9 @@ class TravelingTourist(Game):
         :param move: city name
         :return:
         """
+        if self._check_game_over():
+            return False
+
         if move == self.home_town:
             # only allowed if all other cities have been visited
             if len(self.possible_moves) == 1 and self.possible_moves[0] == self.home_town:
@@ -33,11 +48,22 @@ class TravelingTourist(Game):
         else:
             return True
 
-    def generate_next_move(self) -> str:
-        """ Generates a next city to visit
+    def generate_next_moves(self) -> List[str]:
+        """ Generates a list of possible next cities to visit
 
         If all cities have been visited, next city will be the root city
         :return: city name
         """
-        if self.possible_moves:
-            pass
+        return list(filter(lambda move: self._check_move_possible(move), self.possible_moves))
+
+    def make_a_move(self, move: str):
+        """ Change current_game_state and possible_moves
+
+        :param move: city name
+        :return:
+        """
+        if not self._check_move_possible(move):
+            raise Exception("Cannot make move.")
+        self.possible_moves.remove(move)
+        self.current_game_state.append(move)
+        return

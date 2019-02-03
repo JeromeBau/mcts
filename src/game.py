@@ -9,6 +9,10 @@ class Game(object):
         self.current_game_state = None
         self.possible_moves = None
 
+    def _check_game_correctly_initiated(self):
+        """ Test if game can be played with given start variabled"""
+        raise NotImplementedError
+
     def _check_move_possible(self, move):
         """ Test if move is allowed"""
         raise NotImplementedError
@@ -17,11 +21,11 @@ class Game(object):
         """ Test if another move is possible or if the game has terminated"""
         raise NotImplementedError
 
-    def make_a_move(self):
+    def make_a_move(self, move):
         """ Make a move if possible"""
         raise NotImplementedError
 
-    def generate_next_move(self):
+    def generate_next_moves(self):
         raise NotImplementedError
 
     def simulate_moves(self):
@@ -31,5 +35,3 @@ class Game(object):
     def evaluate_moves(self):
         """ """
         raise NotImplementedError
-
-
