@@ -1,3 +1,9 @@
+class MoveNotAllowedError(LookupError):
+    pass
+
+class GameStateError(Exception):
+    pass
+
 class Game(object):
     """ Defines the game
     To be used as a parent class to define the actual game

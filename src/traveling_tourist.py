@@ -1,14 +1,57 @@
-from typing import List
+from typing import List, Dict
 
-from src.game import Game
+import pandas as pd
+from geopy import distance
+from src.game import Game, MoveNotAllowedError, GameStateError
+
+
+class City(object):
+    def __init__(self, city_name: str):
+        self.name = city_name.lower()
+        self.longitude = None
+        self.latitude = None
+
+    def compute_distance(self):
+        distances = pd.read_csv("resources/large_cities.csv")
+        search = distances[distances["City"] == self.name]
+        if len(search) == 1 and list(search["Latitude"]) == 1 and list(search["Longitude"]) == 1:
+            self.latitude = list(search["Latitude"])[0]
+            self.longitude = list(search["Longitude"])[0]
+        else:
+            raise KeyError("City {name} not found.".format(name=self.name))
+
+    @property
+    def coordinates(self) -> Dict[str, float]:
+        if self.latitude is None or self.longitude is None:
+            self.compute_distance()
+        return {"latitude": self.latitude, "longitude": self.longitude}
+
+
+class CityGrid(object):
+    def __init__(self, city_names: List[str]):
+        self.city_names = city_names
+        self.cities = {name: City(name) for name in self.city_names}
+
+    def distance_between_two_cities(self, city1_name: str, city2_name: str) -> float:
+        """
+        :param city1: Name of one city
+        :param city2: Name of another city
+        :return: The distance in meters
+        """
+        for name in [city1_name, city2_name]:
+            assert name in self.cities, "City name was not found in list given with initiation."
+        city1 = self.cities[city1_name]
+        city2 = self.cities[city2_name]
+        return distance.distance(city1.coordinates, city2.coordinates)
 
 
 class TravelingTourist(Game):
-    def __init__(self):
+    def __init__(self, possible_moves: List[str], current_game_state:List[str], home_town:str):
         super(TravelingTourist, self).__init__()
-        self.home_town = "Berlin"
-        self.possible_moves = ["Berlin", "Copenhagen", "Paris", "Lisbon"]
-        self.current_game_state = []
+        self.home_town = home_town
+        self.possible_moves = possible_moves
+        self.current_game_state = current_game_state
+        self.city_grid = CityGrid(self.possible_moves + self.current_game_state)
 
     def _check_game_correctly_initiated(self):
         duplicates = set([city for city in self.possible_moves if self.possible_moves.count(city) > 1])
@@ -17,8 +60,9 @@ class TravelingTourist(Game):
         raise NotImplementedError
 
     def _check_game_over(self):
-        print("NOT IMPLEMENTED")
-        pass
+        if len(self.possible_moves) == 0:
+            return True
+        return False
 
     def _check_move_possible(self, move: str):
         """ Check if move is allowed
@@ -63,7 +107,11 @@ class TravelingTourist(Game):
         :return:
         """
         if not self._check_move_possible(move):
-            raise Exception("Cannot make move.")
+            raise MoveNotAllowedError("Cannot make this move.")
         self.possible_moves.remove(move)
         self.current_game_state.append(move)
         return
+
+    def evaluate_game(self):
+        if not self._check_game_over():
+            raise GameStateError("Game has not been termianted")

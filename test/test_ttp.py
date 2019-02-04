@@ -1,11 +1,12 @@
 import unittest
 
+from src.game import MoveNotAllowedError
 from src.traveling_tourist import TravelingTourist
 
 
 class TestTravelingTourist(unittest.TestCase):
     def setUp(self):
-        self.t = TravelingTourist()
+        pass
 
     def test_check_moves(self):
         test_sets = [
@@ -25,10 +26,11 @@ class TestTravelingTourist(unittest.TestCase):
             }
         ]
         for test_set in test_sets:
-            self.setUp()
-            self.t.possible_moves = test_set["possible_moves"]
-            self.t.home_town = test_set["home_town"]
-            self.t.current_game_state = test_set["current_game_state"]
+            self.t = TravelingTourist(
+                possible_moves=test_set["possible_moves"],
+                home_town=test_set["home_town"],
+                current_game_state=test_set["current_game_state"]
+            )
 
             for not_allowed in test_set["test_impossible"]:
                 self.assertFalse(self.t._check_move_possible(not_allowed))
@@ -59,11 +61,11 @@ class TestTravelingTourist(unittest.TestCase):
             }
         ]
         for test_set in test_sets:
-            self.setUp()
-            #
-            self.t.possible_moves = test_set["possible_moves"]
-            self.t.home_town = test_set["home_town"]
-            self.t.current_game_state = test_set["current_game_state"]
+            self.t = TravelingTourist(
+                possible_moves=test_set["possible_moves"],
+                home_town=test_set["home_town"],
+                current_game_state=test_set["current_game_state"]
+            )
             #
             self.assertListEqual(self.t.generate_next_moves(), test_set["expected_next_moves"],
                                  "Possible moves: {poss}\n "
@@ -114,14 +116,13 @@ class TestTravelingTourist(unittest.TestCase):
             },
         ]
         for test_set in test_sets:
-            self.setUp()
-            #
-            self.t.possible_moves = test_set["possible_moves"]
-            self.t.home_town = test_set["home_town"]
-            self.t.current_game_state = test_set["current_game_state"]
-            #
+            self.t = TravelingTourist(
+                possible_moves=test_set["possible_moves"],
+                home_town=test_set["home_town"],
+                current_game_state=test_set["current_game_state"]
+            )
             if test_set["expect_raise"]:
-                with self.assertRaises(Exception):
+                with self.assertRaises(MoveNotAllowedError):
                     self.t.make_a_move(test_set["move"])
             else:
                 self.t.make_a_move(test_set["move"])
@@ -136,8 +137,14 @@ class TestTravelingTourist(unittest.TestCase):
             #
             self.tearDown()
 
-
-
+    def test_cities_exist(self):
+        cities_to_test = ['Barcelona', 'Belgrade', 'Berlin', 'Brussels', 'Bucharest', 'Budapest', 'Copenhagen', 'Dublin', 'Paris', 'Lisbon', 'Madrid', 'Cologne', 'Bern', 'Amsterdam', 'London', 'Manchester', 'Oslo', 'Rome', 'Sicily', 'Montpellier', 'Zurich', 'Vienna', 'Athens']
+        self.t = TravelingTourist(
+            possible_moves=cities_to_test,
+            home_town="Athens",
+            current_game_state=[]
+        )
+        self.assertListEqual(list(self.t.city_grid.cities.keys()), cities_to_test)
 
     def tearDown(self):
         self.t = None
