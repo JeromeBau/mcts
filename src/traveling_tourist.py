@@ -50,7 +50,7 @@ class CityGrid(object):
 class TravelingTourist(Game):
     def __init__(self, possible_moves: List[str], current_game_state: List[str], home_town: str):
         super(TravelingTourist, self).__init__()
-        self.home_town = home_town
+        self.root = home_town
         self.possible_moves = possible_moves
         self.current_game_state = current_game_state
         self.city_grid = CityGrid(self.possible_moves + self.current_game_state)
@@ -79,9 +79,9 @@ class TravelingTourist(Game):
         if self._check_game_over():
             return False
 
-        if move == self.home_town:
+        if move == self.root:
             # only allowed if all other cities have been visited
-            if len(self.possible_moves) == 1 and self.possible_moves[0] == self.home_town:
+            if len(self.possible_moves) == 1 and self.possible_moves[0] == self.root:
                 return True
             else:
                 return False
@@ -109,7 +109,7 @@ class TravelingTourist(Game):
         :return:
         """
         if not self._check_move_possible(move):
-            raise MoveNotAllowedError("Cannot make this move.")
+            raise MoveNotAllowedError("Cannot make this move: '{}'.".format(move))
         self.possible_moves.remove(move)
         self.current_game_state.append(move)
         return
@@ -118,11 +118,10 @@ class TravelingTourist(Game):
         if not self._check_game_over():
             raise GameStateError("Game has not been terminated")
         total_distance = 0
-        for i in range(len(self.current_game_state)-1):
+        for i in range(len(self.current_game_state) - 1):
             # TODO: Can be done more elegantly with a map reduce
             city1 = self.current_game_state[i]
-            city2 = self.current_game_state[i+1]
+            city2 = self.current_game_state[i + 1]
             distance = self.city_grid.distance_between_two_cities(city1, city2)
             total_distance += distance
         return total_distance
-

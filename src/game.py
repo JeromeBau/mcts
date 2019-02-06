@@ -17,6 +17,7 @@ class Game(object):
     def __init__(self):
         self.current_game_state = None
         self.possible_moves = None
+        self.root = None
 
     def __repr__(self):
         if self.current_game_state is None:
@@ -55,6 +56,6 @@ class Game(object):
         """ Simulate next moves until the game ends"""
         raise NotImplementedError
 
-    def evaluate_moves(self):
+    def evaluate_game(self):
         """ """
         raise NotImplementedError
