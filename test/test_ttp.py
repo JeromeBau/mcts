@@ -1,12 +1,81 @@
 import unittest
+from typing import Union
 
-from src.game import MoveNotAllowedError
+from src.game import MoveNotAllowedError, GameInitiationError
 from src.traveling_tourist import TravelingTourist
 
 
 class TestTravelingTourist(unittest.TestCase):
     def setUp(self):
         pass
+
+    def _assert_almost_equel(self, number_received: Union[float, int], number_expected: Union[float, int], message=None, factor=0.02):
+        if message is None:
+            message = "Expected {e}, received {r}".format(e=number_expected, r=number_received)
+        return self.assertTrue(number_expected - factor * number_expected < number_received < number_expected + factor * number_expected, message)
+
+    def test_game_initiation(self):
+        test_sets = [
+            {
+                "possible_moves": ["Berlin", "Paris", "Lisbon"],
+                "home_town": "Berlin",
+                "current_game_state": ["Berlin", "Copenhagen"],
+                "expect_raise": False
+            },
+            {
+                "possible_moves": ["Berlin", "Paris", "Lisbon"],
+                "home_town": "Berlin",
+                "current_game_state": ["Copenhagen"],
+                "expect_raise": True
+            },
+            {
+                "possible_moves": ["Berlin", "Paris", "Lisbon"],
+                "home_town": "Berlin",
+                "current_game_state": ["Berlin"],
+                "expect_raise": False
+            },
+            {
+                "possible_moves": ["Berlin", "Paris", "Lisbon"],
+                "home_town": "Berlin",
+                "current_game_state": [],
+                "expect_raise": True
+            },
+            {
+                "possible_moves": ["Berlin", "Paris", "Lisbon"],
+                "home_town": "",
+                "current_game_state": [],
+                "expect_raise": False
+            },
+            {
+                "possible_moves": ["Berlin", "Paris", "Lisbon"],
+                "home_town": None,
+                "current_game_state": [],
+                "expect_raise": True
+            },
+            {
+                "possible_moves": ["Berlin", "Paris", "Lisbon"],
+                "home_town": ["Berlin"],
+                "current_game_state": [],
+                "expect_raise": True
+            }
+        ]
+        for game in test_sets:
+            if game["expect_raise"]:
+                with self.assertRaises(GameInitiationError):
+                    self.t = TravelingTourist(
+                        possible_moves=game["possible_moves"],
+                        home_town=game["home_town"],
+                        current_game_state=game["current_game_state"]
+                    )
+                    print(self.t)
+                    print(self.t.__repr__())
+                    print(self.t.__str__())
+            else:
+                self.t = TravelingTourist(
+                    possible_moves=game["possible_moves"],
+                    home_town=game["home_town"],
+                    current_game_state=game["current_game_state"]
+                )
 
     def test_check_moves(self):
         test_sets = [
@@ -145,6 +214,48 @@ class TestTravelingTourist(unittest.TestCase):
             current_game_state=[]
         )
         self.assertListEqual(list(self.t.city_grid.cities.keys()), cities_to_test)
+
+    def test_city_distances_roughly_correct(self):
+        cities_to_test = ['Barcelona', 'Belgrade', 'Berlin', 'Brussels', 'Bucharest', 'Budapest', 'Copenhagen', 'Dublin', 'Paris', 'Lisbon', 'Madrid', 'Cologne', 'Bern', 'Amsterdam', 'London', 'Manchester', 'Oslo', 'Rome', 'Sicily', 'Montpellier', 'Zurich', 'Vienna', 'Athens']
+        self.t = TravelingTourist(
+            possible_moves=cities_to_test,
+            home_town="Athens",
+            current_game_state=[]
+        )
+        distance_estiamtes = [
+            {
+                "cities": ["Paris", "Berlin"],
+                "distance_expected": 900
+            },
+            {
+                "cities": ["Athens", "Lisbon"],
+                "distance_expected": 2800
+            }
+        ]
+        for distance_dict in distance_estiamtes:
+            distance_computed = int(self.t.city_grid.distance_between_two_cities(*distance_dict["cities"]))
+            self._assert_almost_equel(distance_computed, distance_dict["distance_expected"], factor=0.05)
+
+    def test_evaluate_game(self):
+        test_games = [
+            {
+                "home_town": "Berlin",
+                "current_game_state": ["Berlin", "Paris", "Berlin"],
+                "expected_evaluation": 1776.59
+            },
+            {
+                "home_town": "Berlin",
+                "current_game_state": ["Berlin", "Lisbon", "Athens", "London", "Berlin"],
+                "expected_evaluation": 2314.47 + 2851.68 + 2391.61 + 932.37
+            }
+        ]
+        for game in test_games:
+            self.t = TravelingTourist(
+                possible_moves=[],
+                home_town=game["home_town"],
+                current_game_state=game["current_game_state"]
+            )
+            self._assert_almost_equel(self.t.evaluate_game(), game["expected_evaluation"], factor=0.01)
 
     def tearDown(self):
         self.t = None

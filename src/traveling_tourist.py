@@ -1,7 +1,9 @@
 from typing import List, Dict
 
+import geopy
 import pandas as pd
 from geopy import distance
+
 from src.game import Game, MoveNotAllowedError, GameStateError
 
 
@@ -11,20 +13,20 @@ class City(object):
         self.longitude = None
         self.latitude = None
 
-    def compute_distance(self):
-        distances = pd.read_csv("resources/large_cities.csv")
+    def compute_coordinates(self):
+        distances = pd.read_csv("/home/jjb/Dropbox/Programming/GIT/mcts/src/resources/large_cities.csv")
         search = distances[distances["City"] == self.name]
-        if len(search) == 1 and list(search["Latitude"]) == 1 and list(search["Longitude"]) == 1:
-            self.latitude = list(search["Latitude"])[0]
-            self.longitude = list(search["Longitude"])[0]
+        if len(search) == 1 and len(list(search["Latitude"])) == 1 and len(list(search["Longitude"])) == 1:
+            self.latitude = float(list(search["Latitude"])[0])
+            self.longitude = float(list(search["Longitude"])[0])
         else:
             raise KeyError("City {name} not found.".format(name=self.name))
 
     @property
     def coordinates(self) -> Dict[str, float]:
         if self.latitude is None or self.longitude is None:
-            self.compute_distance()
-        return {"latitude": self.latitude, "longitude": self.longitude}
+            self.compute_coordinates()
+        return geopy.Point(self.latitude, self.longitude)
 
 
 class CityGrid(object):
@@ -42,11 +44,11 @@ class CityGrid(object):
             assert name in self.cities, "City name was not found in list given with initiation."
         city1 = self.cities[city1_name]
         city2 = self.cities[city2_name]
-        return distance.distance(city1.coordinates, city2.coordinates)
+        return distance.distance(city1.coordinates, city2.coordinates).km
 
 
 class TravelingTourist(Game):
-    def __init__(self, possible_moves: List[str], current_game_state:List[str], home_town:str):
+    def __init__(self, possible_moves: List[str], current_game_state: List[str], home_town: str):
         super(TravelingTourist, self).__init__()
         self.home_town = home_town
         self.possible_moves = possible_moves
@@ -114,4 +116,13 @@ class TravelingTourist(Game):
 
     def evaluate_game(self):
         if not self._check_game_over():
-            raise GameStateError("Game has not been termianted")
+            raise GameStateError("Game has not been terminated")
+        total_distance = 0
+        for i in range(len(self.current_game_state)-1):
+            # TODO: Can be done more elegantly with a map reduce
+            city1 = self.current_game_state[i]
+            city2 = self.current_game_state[i+1]
+            distance = self.city_grid.distance_between_two_cities(city1, city2)
+            total_distance += distance
+        return total_distance
+
