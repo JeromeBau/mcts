@@ -4,7 +4,7 @@ import geopy
 import pandas as pd
 from geopy import distance
 
-from src.game import Game, MoveNotAllowedError, GameStateError
+from src.game import Game, MoveNotAllowedError, GameStateError, GameInitiationError
 
 
 class City(object):
@@ -54,12 +54,14 @@ class TravelingTourist(Game):
         self.possible_moves = possible_moves
         self.current_game_state = current_game_state
         self.city_grid = CityGrid(self.possible_moves + self.current_game_state)
+        self._check_game_correctly_initiated()
 
     def _check_game_correctly_initiated(self):
         duplicates = set([city for city in self.possible_moves if self.possible_moves.count(city) > 1])
-        assert len(duplicates) == 0, \
-            "Found the following duplicates in possible moves: {dups}".format(dups=duplicates)
-        raise NotImplementedError
+        if len(duplicates) != 0:
+            raise GameInitiationError("Found the following duplicates in possible moves: {dups}".format(dups=duplicates))
+        if not isinstance(self.root, str):
+            raise GameInitiationError("Home Town needs to be a string.")
 
     def _check_game_over(self):
         if len(self.possible_moves) == 0:

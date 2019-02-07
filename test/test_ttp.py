@@ -26,7 +26,7 @@ class TestTravelingTourist(unittest.TestCase):
                 "possible_moves": ["Berlin", "Paris", "Lisbon"],
                 "home_town": "Berlin",
                 "current_game_state": ["Copenhagen"],
-                "expect_raise": True
+                "expect_raise": False
             },
             {
                 "possible_moves": ["Berlin", "Paris", "Lisbon"],
@@ -38,7 +38,7 @@ class TestTravelingTourist(unittest.TestCase):
                 "possible_moves": ["Berlin", "Paris", "Lisbon"],
                 "home_town": "Berlin",
                 "current_game_state": [],
-                "expect_raise": True
+                "expect_raise": False
             },
             {
                 "possible_moves": ["Berlin", "Paris", "Lisbon"],
@@ -60,6 +60,8 @@ class TestTravelingTourist(unittest.TestCase):
             }
         ]
         for game in test_sets:
+            print("----")
+            print(game)
             if game["expect_raise"]:
                 with self.assertRaises(GameInitiationError):
                     self.t = TravelingTourist(
@@ -68,8 +70,7 @@ class TestTravelingTourist(unittest.TestCase):
                         current_game_state=game["current_game_state"]
                     )
                     print(self.t)
-                    print(self.t.__repr__())
-                    print(self.t.__str__())
+                    print(self.t.root)
             else:
                 self.t = TravelingTourist(
                     possible_moves=game["possible_moves"],
