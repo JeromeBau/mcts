@@ -27,6 +27,10 @@ class MonteCarloTreeSearch(object):
             # TODO
             raise NotImplementedError
 
+    @staticmethod
+    def _weighted_random_choice(choices: List[str], probability_vector: List[float]) -> str:
+        return choice(choices, 1, p=probability_vector)[0]
+
     def select(self):
         """
 
@@ -34,21 +38,27 @@ class MonteCarloTreeSearch(object):
         """
         self.current_game = deepcopy(self.game_master)
 
-        def weighted_random_choice(choices: List[str], probability_vector: List[float]) -> str:
-            return choice(choices, 1, p=probability_vector)[0]
-
         branch = self.search_tree[self.game_master.root]
         children_distances = {k: branch[k].average_path_value for k in branch.keys()}
         sum_distances = sum(children_distances.values())
-        children_probs = {k: v/sum_distances for k,v in children_distances.items()}
+        children_probs = {k: v / sum_distances for k, v in children_distances.items()}
 
         while len(children_probs.keys()) and self.current_game._check_game_over() is False:
-            chosen = weighted_random_choice(list(children_probs.keys()), list(children_probs.values()))
+            chosen = self._weighted_random_choice(list(children_probs.keys()), list(children_probs.values()))
             self.current_path.append(chosen)
             self.current_game.make_a_move(chosen)
             branch = branch[chosen]
             if isinstance(branch, dict):
-                children_probs = {k: branch[k].average_path_value for k in branch.keys() if isinstance(k, str)}
+                try:
+                    children_distances = {k: branch[k].average_path_value for k in branch.keys() if isinstance(k, str)}
+                    sum_distances = sum(children_distances.values())
+                    children_probs = {k: v / sum_distances for k, v in children_distances.items()}
+                except:
+                    import ipdb
+                    ipdb.set_trace()
+                    print()
+                    print(1 + 2)
+
             else:
                 break
         return self.current_path
@@ -82,6 +92,9 @@ class MonteCarloTreeSearch(object):
             # Make move
             simulated_game.make_a_move(expansion_child)
             simulated_path.append(expansion_child)
+        if len(list(simulated_path)) - len(set(simulated_path)) > 1:
+            import ipdb
+            ipdb.set_trace()
         print(simulated_path)
         evaluation = simulated_game.evaluate_game()
         return evaluation
@@ -93,42 +106,20 @@ class MonteCarloTreeSearch(object):
         current_leaf.average_path_value = simulation_evaluation
 
     def main(self):
-        self.select()
-        self.expand()
-        simulation_evaluation = self.simulate()
-        if simulation_evaluation:
-            self.backpropagate(simulation_evaluation)
+        for i in range(3):
+            self.select()
+            self.expand()
+            simulation_evaluation = self.simulate()
+            if simulation_evaluation:
+                self.backpropagate(simulation_evaluation)
 
 
 if __name__ == "__main__":
-    traveling_tourist = TravelingTourist(possible_moves=["Berlin", "Lisbon", "Hamburg", "Madrid", "Copenhagen"],
-                                         home_town="Berlin",
-                                         current_game_state=[])
-    tree = SearchTree()
-    M = MonteCarloTreeSearch(game_object=traveling_tourist, tree_object=tree)
-    pprint(M.search_tree)
-    M.main()
-
-    # M.search_tree["Berlin"]["Hamburg"]["Lisbon"] =  SearchTree()
-    # M.search_tree["Berlin"]["Hamburg"]["Lisbon"].average_path_value = 0.5
-    # M.search_tree["Berlin"]["Hamburg"]["Madrid"] =  SearchTree()
-    # M.search_tree["Berlin"]["Hamburg"]["Madrid"].average_path_value = 0.5
-    #
-    # M.search_tree["Berlin"]["Lisbon"]["Hamburg"] = SearchTree()
-    # M.search_tree["Berlin"]["Lisbon"]["Madrid"] = SearchTree()
-    # M.search_tree["Berlin"]["Lisbon"]["Hamburg"].average_path_value = 0.5
-    # M.search_tree["Berlin"]["Lisbon"]["Madrid"].average_path_value = 0.5
-    #
-    # M.search_tree["Berlin"]["Madrid"]["Hamburg"] = SearchTree()
-    # M.search_tree["Berlin"]["Madrid"]["Lisbon"] = SearchTree()
-    # M.search_tree["Berlin"]["Madrid"]["Hamburg"].average_path_value = 0.5
-    # M.search_tree["Berlin"]["Madrid"]["Lisbon"].average_path_value = 0.5
-
-
-    #
-    # ST = SearchTree()
-    # cities = list(filter(lambda city: city != T.home_town, T.possible_moves))
-    # for city in cities:
-    #     ST[T.root][city] = 1 / len(cities)
-    #
-    # pprint(ST)
+    for i in range(10):
+        traveling_tourist = TravelingTourist(possible_moves=["Berlin", "Lisbon", "Hamburg", "Madrid", "Copenhagen"],
+                                             home_town="Berlin",
+                                             current_game_state=[])
+        tree = SearchTree()
+        M = MonteCarloTreeSearch(game_object=traveling_tourist, tree_object=tree)
+        pprint(M.search_tree)
+        M.main()
