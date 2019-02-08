@@ -49,16 +49,9 @@ class MonteCarloTreeSearch(object):
             self.current_game.make_a_move(chosen)
             branch = branch[chosen]
             if isinstance(branch, dict):
-                try:
-                    children_distances = {k: branch[k].average_path_value for k in branch.keys() if isinstance(k, str)}
-                    sum_distances = sum(children_distances.values())
-                    children_probs = {k: v / sum_distances for k, v in children_distances.items()}
-                except:
-                    import ipdb
-                    ipdb.set_trace()
-                    print()
-                    print(1 + 2)
-
+                children_distances = {k: branch[k].average_path_value for k in branch.keys() if isinstance(k, str)}
+                sum_distances = sum(children_distances.values())
+                children_probs = {k: v / sum_distances for k, v in children_distances.items()}
             else:
                 break
         return self.current_path
@@ -92,10 +85,6 @@ class MonteCarloTreeSearch(object):
             # Make move
             simulated_game.make_a_move(expansion_child)
             simulated_path.append(expansion_child)
-        if len(list(simulated_path)) - len(set(simulated_path)) > 1:
-            import ipdb
-            ipdb.set_trace()
-        print(simulated_path)
         evaluation = simulated_game.evaluate_game()
         return evaluation
 
@@ -103,6 +92,7 @@ class MonteCarloTreeSearch(object):
         current_leaf = self.search_tree
         for next_leaf in self.current_path:
             current_leaf = current_leaf[next_leaf]
+        print(self.current_path)
         current_leaf.average_path_value = simulation_evaluation
 
     def main(self):
@@ -118,7 +108,7 @@ if __name__ == "__main__":
     for i in range(10):
         traveling_tourist = TravelingTourist(possible_moves=["Berlin", "Lisbon", "Hamburg", "Madrid", "Copenhagen"],
                                              home_town="Berlin",
-                                             current_game_state=[])
+                                             current_game_state=["Berlin"])
         tree = SearchTree()
         M = MonteCarloTreeSearch(game_object=traveling_tourist, tree_object=tree)
         pprint(M.search_tree)

@@ -1,18 +1,12 @@
 import unittest
-from typing import Union
 
 from src.game import MoveNotAllowedError, GameInitiationError
 from src.traveling_tourist import TravelingTourist
-
+from helper_functions import _assert_almost_equel
 
 class TestTravelingTourist(unittest.TestCase):
     def setUp(self):
         pass
-
-    def _assert_almost_equel(self, number_received: Union[float, int], number_expected: Union[float, int], message=None, factor=0.02):
-        if message is None:
-            message = "Expected {e}, received {r}".format(e=number_expected, r=number_received)
-        return self.assertTrue(number_expected - factor * number_expected < number_received < number_expected + factor * number_expected, message)
 
     def test_game_initiation(self):
         test_sets = [
@@ -235,7 +229,7 @@ class TestTravelingTourist(unittest.TestCase):
         ]
         for distance_dict in distance_estiamtes:
             distance_computed = int(self.t.city_grid.distance_between_two_cities(*distance_dict["cities"]))
-            self._assert_almost_equel(distance_computed, distance_dict["distance_expected"], factor=0.05)
+            _assert_almost_equel(distance_computed, distance_dict["distance_expected"], factor=0.05)
 
     def test_evaluate_game(self):
         test_games = [
@@ -256,7 +250,7 @@ class TestTravelingTourist(unittest.TestCase):
                 home_town=game["home_town"],
                 current_game_state=game["current_game_state"]
             )
-            self._assert_almost_equel(self.t.evaluate_game(), game["expected_evaluation"], factor=0.01)
+            _assert_almost_equel(self.t.evaluate_game(), game["expected_evaluation"], factor=0.01)
 
     def tearDown(self):
         self.t = None
