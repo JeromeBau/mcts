@@ -1,3 +1,4 @@
+import math
 import random
 from copy import deepcopy
 from pprint import pprint
@@ -15,17 +16,11 @@ class MonteCarloTreeSearch(object):
         self.current_game = deepcopy(game_object)
         self.current_path = [self.game_master.root]
         self.search_tree = tree_object
-        self.initiate()
+        self.upc_coefficient = 1
+        self.total_simulations_run = 0
 
-    def initiate(self):
-        if len(self.game_master.possible_moves) > 1:
-            children = self.game_master.generate_next_moves()
-            for child in children:
-                self.search_tree[self.game_master.root][child] = SearchTree()
-                self.search_tree[self.game_master.root][child].average_path_value = 1 / len(children)
-        else:
-            # TODO
-            raise NotImplementedError
+    def compute_upper_confidence_bound(self, average_value: float, n_simul_node: int) -> float:
+        return average_value + self.upc_coefficient * math.sqrt((math.log(self.total_simulations_run) / n_simul_node))
 
     @staticmethod
     def _weighted_random_choice(choices: List[str], probability_vector: List[float]) -> str:
@@ -37,11 +32,12 @@ class MonteCarloTreeSearch(object):
         :return:
         """
         self.current_game = deepcopy(self.game_master)
-
+        self.current_path = [self.game_master.root]
         branch = self.search_tree[self.game_master.root]
-        children_distances = {k: branch[k].average_path_value for k in branch.keys()}
-        sum_distances = sum(children_distances.values())
-        children_probs = {k: v / sum_distances for k, v in children_distances.items()}
+        children_ucb = {k: self.compute_upper_confidence_bound(average_value=branch[k].average_path_value, n_simul_node=branch[k].passes)
+                        for k in branch.keys()}
+        sum_ucb = sum(children_ucb.values())
+        children_probs = {k: v / sum_ucb for k, v in children_ucb.items()}
 
         while len(children_probs.keys()) and self.current_game._check_game_over() is False:
             chosen = self._weighted_random_choice(list(children_probs.keys()), list(children_probs.values()))
@@ -49,9 +45,9 @@ class MonteCarloTreeSearch(object):
             self.current_game.make_a_move(chosen)
             branch = branch[chosen]
             if isinstance(branch, dict):
-                children_distances = {k: branch[k].average_path_value for k in branch.keys() if isinstance(k, str)}
-                sum_distances = sum(children_distances.values())
-                children_probs = {k: v / sum_distances for k, v in children_distances.items()}
+                children_ucb = {k: branch[k].average_path_value for k in branch.keys() if isinstance(k, str)}
+                sum_ucb = sum(children_ucb.values())
+                children_probs = {k: v / sum_ucb for k, v in children_ucb.items()}
             else:
                 break
         return self.current_path
@@ -86,14 +82,24 @@ class MonteCarloTreeSearch(object):
             simulated_game.make_a_move(expansion_child)
             simulated_path.append(expansion_child)
         evaluation = simulated_game.evaluate_game()
+        self.total_simulations_run += 1
         return evaluation
+
+    def _backpropagate_change_leave_value(self, path, value):
+        current_leaf = self.search_tree
+        for next_leaf in path:
+            current_leaf = current_leaf[next_leaf]
+        if current_leaf.passes == 1:
+            current_leaf.average_path_value = value
+        else:
+            current_leaf.average_path_value = (current_leaf.passes * current_leaf.average_path_value + simulation_evaluation) / (current_leaf.passes + 1)
 
     def backpropagate(self, simulation_evaluation):
         current_leaf = self.search_tree
         for next_leaf in self.current_path:
             current_leaf = current_leaf[next_leaf]
-        print(self.current_path)
-        current_leaf.average_path_value = simulation_evaluation
+            current_leaf.passes += 1
+        self._backpropagate_change_leave_value(path=self.current_path, value=simulation_evaluation)
 
     def main(self):
         for i in range(3):
