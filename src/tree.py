@@ -8,4 +8,5 @@ class SearchTree(Tree):
     def __init__(self):
         super(SearchTree, self).__init__()
         self.average_path_value = None
+        self.passes = 0
         self.full_path = []
