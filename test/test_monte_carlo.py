@@ -5,6 +5,7 @@ from typing import List
 
 from helper_functions import _assert_almost_equel
 
+from nlg import NLGame
 from src.monte_carlo import MonteCarloTreeSearch
 from src.traveling_tourist import TravelingTourist
 from src.tree import SearchTree
@@ -134,7 +135,11 @@ class TestMonteCarloWithTSP(unittest.TestCase):
 
 class TestMonteCarloWithNLG(unittest.TestCase):
     def setUp(self):
-        pass
+        nl_game = NLGame(vocabulary=["my", "name", "is", "was", "john", "michael"],
+                         current_game_state=["my"],
+                         starting_word="my")
+        tree = SearchTree()
+        self.m = MonteCarloTreeSearch(game_object=traveling_tourist, tree_object=tree)
 
     def test_select(self):
         pass
