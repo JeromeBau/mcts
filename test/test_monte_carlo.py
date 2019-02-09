@@ -94,13 +94,31 @@ class TestMonteCarloWithTSP(unittest.TestCase):
         evaluation = self._mock_simulate()
         self.m.backpropagate(evaluation)
 
-    def test_select_second_step(self):
+    def test_select_second_iteration(self):
         self.make_one_iteration_w_mock()
 
         current_path = self._mock_select()
         self.assertListEqual(current_path, ["Berlin", "Lisbon"])
         self.assertListEqual(self.m.current_path, ["Berlin", "Lisbon"])
         self.assertListEqual(self.m.current_game.current_game_state, ["Berlin", "Lisbon"])
+
+        current_path = self._mock_expand()
+        self.assertListEqual(current_path, ["Berlin", "Lisbon", "Hamburg"])
+        self.assertListEqual(self.m.current_path, ["Berlin", "Lisbon", "Hamburg"])
+        self.assertListEqual(self.m.current_game.current_game_state, ["Berlin", "Lisbon", "Hamburg"])
+
+        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
+        self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 1)
+        evaluation = self.m.simulate()
+        self.m.backpropagate(evaluation)
+        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
+        self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 2)
+        self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].average_path_value, 8749.90115785418)
+        self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].passes, 1)
+
+
 
     def tearDown(self):
         pass

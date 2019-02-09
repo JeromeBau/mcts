@@ -1,7 +1,7 @@
 import unittest
 
-from src.game import MoveNotAllowedError, GameInitiationError
-from src.traveling_tourist import TravelingTourist
+from game import MoveNotAllowedError, GameInitiationError
+from traveling_tourist import TravelingTourist
 from helper_functions import _assert_almost_equel
 
 class TestTravelingTourist(unittest.TestCase):
@@ -38,7 +38,7 @@ class TestTravelingTourist(unittest.TestCase):
                 "possible_moves": ["Berlin", "Paris", "Lisbon"],
                 "home_town": "",
                 "current_game_state": [],
-                "expect_raise": False
+                "expect_raise": True
             },
             {
                 "possible_moves": ["Berlin", "Paris", "Lisbon"],
@@ -63,8 +63,6 @@ class TestTravelingTourist(unittest.TestCase):
                         home_town=game["home_town"],
                         current_game_state=game["current_game_state"]
                     )
-                    print(self.t)
-                    print(self.t.root)
             else:
                 self.t = TravelingTourist(
                     possible_moves=game["possible_moves"],
@@ -187,6 +185,7 @@ class TestTravelingTourist(unittest.TestCase):
             )
             if test_set["expect_raise"]:
                 with self.assertRaises(MoveNotAllowedError):
+                    print(test_set)
                     self.t.make_a_move(test_set["move"])
             else:
                 self.t.make_a_move(test_set["move"])

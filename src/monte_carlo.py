@@ -6,8 +6,9 @@ from typing import List
 
 from numpy.random import choice
 
-from src.traveling_tourist import TravelingTourist
-from src.tree import SearchTree
+from traveling_tourist import TravelingTourist
+from tree import SearchTree
+
 
 
 class MonteCarloTreeSearch(object):
@@ -101,13 +102,12 @@ class MonteCarloTreeSearch(object):
             current_leaf.passes += 1
         self._backpropagate_change_leave_value(path=self.current_path, value=simulation_evaluation)
 
-    def main(self):
-        for i in range(3):
-            self.select()
-            self.expand()
-            simulation_evaluation = self.simulate()
-            if simulation_evaluation:
-                self.backpropagate(simulation_evaluation)
+    def make_iteration(self):
+        self.select()
+        self.expand()
+        simulation_evaluation = self.simulate()
+        if simulation_evaluation:
+            self.backpropagate(simulation_evaluation)
 
 
 if __name__ == "__main__":
@@ -118,4 +118,4 @@ if __name__ == "__main__":
         tree = SearchTree()
         M = MonteCarloTreeSearch(game_object=traveling_tourist, tree_object=tree)
         pprint(M.search_tree)
-        M.main()
+        M.make_iteration()

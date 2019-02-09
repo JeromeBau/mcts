@@ -4,7 +4,7 @@ import geopy
 import pandas as pd
 from geopy import distance
 
-from src.game import Game, MoveNotAllowedError, GameStateError, GameInitiationError
+from game import Game, MoveNotAllowedError, GameStateError, GameInitiationError
 
 
 class City(object):
@@ -60,8 +60,8 @@ class TravelingTourist(Game):
         duplicates = set([city for city in self.possible_moves if self.possible_moves.count(city) > 1])
         if len(duplicates) != 0:
             raise GameInitiationError("Found the following duplicates in possible moves: {dups}".format(dups=duplicates))
-        if not isinstance(self.root, str):
-            raise GameInitiationError("Home Town needs to be a string.")
+        if not isinstance(self.root, str) or not len(self.root):
+            raise GameInitiationError("Home Town needs to be a string with at least one characater.")
 
     def _check_game_over(self):
         if len(self.possible_moves) == 0:
