@@ -44,6 +44,16 @@ class TestMonteCarloWithTSP(unittest.TestCase):
             evaluation = self.m.simulate()
         return evaluation
 
+    def test_upper_confidence_bound(self):
+        self.m.total_simulations_run = 42
+        self.m.upc_coefficient = 1000
+        average_value = 4300
+        n_simul_node = 4
+        expected = round(5266.652680423968, 3)
+        received = round(self.m.compute_upper_confidence_bound(average_value=average_value,
+                                                               n_simul_node=n_simul_node), 3)
+        self.assertEqual(expected, received)
+
     def test_select(self):
         current_path = self._mock_select()
         self.assertListEqual(current_path, ["Berlin"])
@@ -110,15 +120,13 @@ class TestMonteCarloWithTSP(unittest.TestCase):
         self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 1)
-        evaluation = self.m.simulate()
+        evaluation = self._mock_simulate()
         self.m.backpropagate(evaluation)
         self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 2)
-        self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].average_path_value, 8749.90115785418)
+        self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].passes, 1)
-
-
 
     def tearDown(self):
         pass
