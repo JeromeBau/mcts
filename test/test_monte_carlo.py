@@ -205,7 +205,19 @@ class TestMonteCarloWithNLG(unittest.TestCase):
         self.assertEqual(self.m.search_tree["my"]["name"]["name"].passes, 1)
         self.assertEqual(self.m.search_tree["my"]["name"]["name"].average_path_value, 0)
         self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 0.5)
-        print(self.m.search_tree["my"]["name"].average_path_value)
+
+        print("\n"*2)
+        print("-" * 20)
+        # Next iteration
+        self._mock_select()
+        self._mock_expand()
+        self._mock_simulate()
+        # override with 0
+        self.m.backpropagate(0)
+        self.assertEqual(self.m.search_tree["my"]["name"].passes, 3)
+        self.assertEqual(self.m.search_tree["my"]["name"]["name"].passes, 2)
+        self.assertEqual(self.m.search_tree["my"]["name"]["name"].average_path_value, 0)
+        self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 0.3333333333333333)
         # raise
 
     # def test_random(self):

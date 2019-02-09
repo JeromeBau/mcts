@@ -41,7 +41,7 @@ class MonteCarloTreeSearch(object):
             self.current_game.make_a_move(chosen)
             branch = branch[chosen]
             if isinstance(branch, dict):
-                children_ucb = {k: branch[k].average_path_value for k in branch.keys() if isinstance(k, str)}
+                children_ucb = {k: self.compute_upper_confidence_bound(average_value=branch[k].average_path_value, n_simul_node=branch[k].passes) for k in branch.keys() if isinstance(k, str)}
                 sum_ucb = sum(children_ucb.values())
                 children_probs = {k: v / sum_ucb for k, v in children_ucb.items()}
             else:
