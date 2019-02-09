@@ -82,20 +82,33 @@ class MonteCarloTreeSearch(object):
         return evaluation
 
     def _backpropagate_change_leave_value(self, path, value):
-        current_leaf = self.search_tree
-        for next_leaf in path:
-            current_leaf = current_leaf[next_leaf]
-        if current_leaf.passes == 1:
-            current_leaf.average_path_value = value
+        current_child = self.search_tree
+        print("start", current_child)
+        for next_child in self.current_path:
+            current_child = current_child[next_child]
+            print("current", current_child)
+        if current_child.passes == 1:
+            current_child.average_path_value = value
         else:
-            current_leaf.average_path_value = (current_leaf.passes * current_leaf.average_path_value + value) / (current_leaf.passes + 1)
+            current_child.average_path_value = (current_child.passes * current_child.average_path_value + value) / (current_child.passes + 1)
+
+    def _backpropagate_change_passes(self):
+        current_child = self.search_tree
+        for next_child in self.current_path:
+            current_child = current_child[next_child]
+            current_child.passes += 1
 
     def backpropagate(self, simulation_evaluation):
-        current_leaf = self.search_tree
-        for next_leaf in self.current_path:
-            current_leaf = current_leaf[next_leaf]
-            current_leaf.passes += 1
-        self._backpropagate_change_leave_value(path=self.current_path, value=simulation_evaluation)
+        # self._backpropagate_change_passes()
+        # self._backpropagate_change_leave_value(path=self.current_path, value=simulation_evaluation)
+        current_child = self.search_tree
+        for next_child in self.current_path:
+            current_child = current_child[next_child]
+            current_child.passes += 1
+            if current_child.passes == 1:
+                current_child.average_path_value = simulation_evaluation
+            else:
+                current_child.average_path_value = ((current_child.passes - 1)* current_child.average_path_value + simulation_evaluation) / (current_child.passes)
 
     def make_iteration(self):
         self.select()
@@ -114,7 +127,6 @@ class MonteCarloTreeSearch(object):
             else:
                 return None
         best_child_name = get_best_child(self.search_tree.values())
-        print(best_child_name)
         current_node = self.search_tree[best_child_name]
 
         while best_child_name is not None:

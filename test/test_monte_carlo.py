@@ -83,7 +83,7 @@ class TestMonteCarloWithTSP(unittest.TestCase):
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, None)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 0)
         self.m.backpropagate(evaluation)
-        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 1)
 
@@ -118,12 +118,12 @@ class TestMonteCarloWithTSP(unittest.TestCase):
         self.assertListEqual(self.m.current_path, ["Berlin", "Lisbon", "Hamburg"])
         self.assertListEqual(self.m.current_game.current_game_state, ["Berlin", "Lisbon", "Hamburg"])
 
-        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 1)
         evaluation = self._mock_simulate()
         self.m.backpropagate(evaluation)
-        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 2)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].average_path_value, 8732.433984335672)
@@ -135,14 +135,86 @@ class TestMonteCarloWithTSP(unittest.TestCase):
 
 class TestMonteCarloWithNLG(unittest.TestCase):
     def setUp(self):
-        nl_game = NLGame(vocabulary=["my", "name", "is", "was", "john", "michael"],
+        nl_game = NLGame(vocabulary=["name", "is", "john", "was", "michael","my"],
                          current_game_state=["my"],
                          starting_word="my")
         tree = SearchTree()
-        self.m = MonteCarloTreeSearch(game_object=traveling_tourist, tree_object=tree)
+        self.m = MonteCarloTreeSearch(game_object=nl_game, tree_object=tree)
+
+    def _mock_select(self):
+        with mock.patch.object(MonteCarloTreeSearch, '_weighted_random_choice', new=patched_weighted_random_choice):
+            current_path = self.m.select()
+        return current_path
+
+    def _mock_expand(self):
+        with mock.patch('random.choice', patched_random_choice):
+            expanded_path = self.m.expand()
+        return expanded_path
+
+    def _mock_simulate(self):
+        with mock.patch('random.choice', patched_random_choice):
+            evaluation = self.m.simulate()
+        return evaluation
+
+    def make_one_iteration_w_mock(self):
+        self._mock_select()
+        self._mock_expand()
+        evaluation = self._mock_simulate()
+        self.m.backpropagate(evaluation)
 
     def test_select(self):
-        pass
+        current_path = self._mock_select()
+        self.assertListEqual(current_path, ["my"])
+        self.assertListEqual(self.m.current_path, ["my"])
+        self.assertListEqual(self.m.current_game.current_game_state, ["my"])
+
+    def test_expand(self):
+        self._mock_select()
+        expanded_path = self._mock_expand()
+        self.assertListEqual(expanded_path, ["my", "name"])
+        self.assertListEqual(self.m.current_path, ["my", "name"])
+
+    def test_simulate(self):
+        self._mock_select()
+        self._mock_expand()
+        evaluation = self._mock_simulate()
+        # simulated_path = ['my', 'name', 'name', 'name', 'name']
+        expected = 1
+        self.assertEqual(expected, evaluation)
+
+    def test_backpropagate(self):
+        self._mock_select()
+        self._mock_expand()
+        evaluation = self._mock_simulate()
+        self.assertEqual(self.m.search_tree["my"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["my"]["name"].passes, 0)
+        self.m.backpropagate(evaluation)
+        self.assertEqual(self.m.search_tree["my"].average_path_value, 1)
+        self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 1)
+        self.assertEqual(self.m.search_tree["my"]["name"].passes, 1)
+        print("\n"*2)
+        print("-" * 20)
+        # Next iteration
+        self._mock_select()
+        self._mock_expand()
+        self._mock_simulate()
+        # override with 0
+        self.m.backpropagate(0)
+        self.assertEqual(self.m.search_tree["my"]["name"].passes, 2)
+        self.assertEqual(self.m.search_tree["my"]["name"]["name"].passes, 1)
+        self.assertEqual(self.m.search_tree["my"]["name"]["name"].average_path_value, 0)
+        self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 0.5)
+        print(self.m.search_tree["my"]["name"].average_path_value)
+        # raise
+
+    # def test_random(self):
+    #     print("select: ", self.m.select())
+    #     print("expand: ", self.m.expand())
+    #     evaluation = self.m.simulate()
+    #     print("simul: ", evaluation)
+    #     print("backprop: ", self.m.backpropagate(evaluation))
+    #     raise
 
     def tearDown(self):
         pass

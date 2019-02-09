@@ -11,6 +11,9 @@ class SentenceClassifier(object):
         :param word_sequence:
         :return: True if sentence is human, False if fake
         """
+        # unique_words = set(word_sequence)
+        # if len(unique_words) != len(word_sequence):
+        #     return False
         # TODO: classifier with feature number of overlapping tri-grams
         return True
 
