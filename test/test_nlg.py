@@ -2,6 +2,7 @@ import unittest
 
 from game import MoveNotAllowedError, GameInitiationError
 from nlg import NLGame
+from sentence_classifier.sentence_classifier import SentenceClassifier
 from traveling_tourist import TravelingTourist
 from helper_functions import _assert_almost_equel
 
@@ -75,3 +76,13 @@ class TestNLG(unittest.TestCase):
             for allowed in test_set["test_possible"]:
                 self.assertTrue(self.t._check_move_possible(allowed))
             self.tearDown()
+
+class TestSentenceClassifier(unittest.TestCase):
+    def setUp(self):
+        self.sentence_classifier =SentenceClassifier()
+
+    def test_accept(self):
+        human = ["my name is michael", "my name is michael"]
+        not_human = ["my name name name", "john my michael name"]
+        for sentence in human:
+            self.assertTrue(self.sentence_classifier.sentence_is_human(sentence.split()))

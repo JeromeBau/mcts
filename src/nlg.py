@@ -1,21 +1,8 @@
-from game import Game, GameInitiationError, MoveNotAllowedError
 from typing import List
 
-class SentenceClassifier(object):
-    def __init__(self):
-        pass
+from game import Game, GameInitiationError, MoveNotAllowedError
+from sentence_classifier.sentence_classifier import SentenceClassifier
 
-    def sentence_is_human(self, word_sequence: List[str]) -> bool:
-        """ Determine if sentence is human or fake
-
-        :param word_sequence:
-        :return: True if sentence is human, False if fake
-        """
-        # unique_words = set(word_sequence)
-        # if len(unique_words) != len(word_sequence):
-        #     return False
-        # TODO: classifier with feature number of overlapping tri-grams
-        return True
 
 class NLGame(Game):
     def __init__(self, vocabulary: List[str], current_game_state: List[str], starting_word: str):

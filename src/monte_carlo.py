@@ -5,6 +5,8 @@ from pprint import pprint
 from typing import List
 
 from numpy.random import choice
+
+from nlg import NLGame
 from traveling_tourist import TravelingTourist
 from tree import SearchTree
 
@@ -19,7 +21,11 @@ class MonteCarloTreeSearch(object):
         self.total_simulations_run = 0
 
     def compute_upper_confidence_bound(self, average_value: float, n_simul_node: int) -> float:
-        return average_value + self.upc_coefficient * math.sqrt((math.log(self.total_simulations_run) / n_simul_node))
+        value = average_value + self.upc_coefficient * math.sqrt((math.log(self.total_simulations_run) / n_simul_node))
+        if value == 0:
+            # TODO: dirty fix?
+            value += 0.01
+        return value
 
     @staticmethod
     def _weighted_random_choice(choices: List[str], probability_vector: List[float]) -> str:
@@ -28,7 +34,6 @@ class MonteCarloTreeSearch(object):
     def select(self):
         self.current_game = deepcopy(self.game_master)
         self.current_path = [self.game_master.root]
-
         branch = self.search_tree[self.game_master.root]
         children_ucb = {k: self.compute_upper_confidence_bound(average_value=branch[k].average_path_value, n_simul_node=branch[k].passes)
                         for k in branch.keys()}
@@ -71,7 +76,7 @@ class MonteCarloTreeSearch(object):
             # Retrieve possible children
             children = simulated_game.generate_next_moves()
             if not len(children):
-                return False
+                raise Exception("No children left")
             # Randomly choose one of them
             expansion_child = random.choice(children)
             # Make move
@@ -81,26 +86,7 @@ class MonteCarloTreeSearch(object):
         self.total_simulations_run += 1
         return evaluation
 
-    def _backpropagate_change_leave_value(self, path, value):
-        current_child = self.search_tree
-        print("start", current_child)
-        for next_child in self.current_path:
-            current_child = current_child[next_child]
-            print("current", current_child)
-        if current_child.passes == 1:
-            current_child.average_path_value = value
-        else:
-            current_child.average_path_value = (current_child.passes * current_child.average_path_value + value) / (current_child.passes + 1)
-
-    def _backpropagate_change_passes(self):
-        current_child = self.search_tree
-        for next_child in self.current_path:
-            current_child = current_child[next_child]
-            current_child.passes += 1
-
     def backpropagate(self, simulation_evaluation):
-        # self._backpropagate_change_passes()
-        # self._backpropagate_change_leave_value(path=self.current_path, value=simulation_evaluation)
         current_child = self.search_tree
         for next_child in self.current_path:
             current_child = current_child[next_child]
@@ -108,13 +94,15 @@ class MonteCarloTreeSearch(object):
             if current_child.passes == 1:
                 current_child.average_path_value = simulation_evaluation
             else:
+                assert current_child != 0
                 current_child.average_path_value = ((current_child.passes - 1)* current_child.average_path_value + simulation_evaluation) / (current_child.passes)
 
     def make_iteration(self):
         self.select()
         self.expand()
         simulation_evaluation = self.simulate()
-        if simulation_evaluation:
+        if isinstance(simulation_evaluation, int):
+            # TODO: Not sure if int is sufficient
             self.backpropagate(simulation_evaluation)
 
     def find_best_path(self):
@@ -126,12 +114,12 @@ class MonteCarloTreeSearch(object):
                 return sorted(child_value_tups, key=lambda tup: tup[1])[0][0]
             else:
                 return None
+
         best_child_name = get_best_child(self.search_tree.values())
         current_node = self.search_tree[best_child_name]
 
         while best_child_name is not None:
-            import ipdb
-            ipdb.set_trace()
+
             best_child_name = get_best_child(self.search_tree.values())
             current_node = self.search_tree[best_child_name]
 
@@ -144,11 +132,21 @@ class MonteCarloTreeSearch(object):
 
 
 if __name__ == "__main__":
-    traveling_tourist = TravelingTourist(possible_moves=["Berlin", "Lisbon", "Hamburg", "Madrid", "Oslo", "Rome", "Copenhagen", "Budapest"],
-                                         home_town="Berlin",
-                                         current_game_state=["Berlin"])
+    # traveling_tourist = TravelingTourist(possible_moves=["Berlin", "Lisbon", "Hamburg", "Madrid", "Oslo", "Rome", "Copenhagen", "Budapest"],
+    #                                      home_town="Berlin",
+    #                                      current_game_state=["Berlin"])
+    # tree = SearchTree()
+    # M = MonteCarloTreeSearch(game_object=traveling_tourist, tree_object=tree)
+    # for i in range(5):
+    #     M.make_iteration()
+    # print(M.find_best_path())
+
+
+    nl_game = NLGame(vocabulary=["name", "is", "john", "was", "michael", "my"],
+                     current_game_state=["my"],
+                     starting_word="my")
     tree = SearchTree()
-    M = MonteCarloTreeSearch(game_object=traveling_tourist, tree_object=tree)
+    M = MonteCarloTreeSearch(game_object=nl_game, tree_object=tree)
     for i in range(5):
+        print("i", i)
         M.make_iteration()
-    print(M.find_best_path())

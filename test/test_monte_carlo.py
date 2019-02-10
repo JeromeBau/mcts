@@ -129,13 +129,20 @@ class TestMonteCarloWithTSP(unittest.TestCase):
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].passes, 1)
 
+    # def test_random_iterations(self):
+    #     for i in range(10):
+    #         self.m.make_iteration()
+    #
+    #     print(self.m.search_tree)
+    #     # raise
+
     def tearDown(self):
         pass
 
 
 class TestMonteCarloWithNLG(unittest.TestCase):
     def setUp(self):
-        nl_game = NLGame(vocabulary=["name", "is", "john", "was", "michael","my"],
+        nl_game = NLGame(vocabulary=["name", "is", "john", "was", "michael", "my"],
                          current_game_state=["my"],
                          starting_word="my")
         tree = SearchTree()
@@ -193,7 +200,7 @@ class TestMonteCarloWithNLG(unittest.TestCase):
         self.assertEqual(self.m.search_tree["my"].average_path_value, 1)
         self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 1)
         self.assertEqual(self.m.search_tree["my"]["name"].passes, 1)
-        print("\n"*2)
+        print("\n" * 2)
         print("-" * 20)
         # Next iteration
         self._mock_select()
@@ -206,7 +213,7 @@ class TestMonteCarloWithNLG(unittest.TestCase):
         self.assertEqual(self.m.search_tree["my"]["name"]["name"].average_path_value, 0)
         self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 0.5)
 
-        print("\n"*2)
+        print("\n" * 2)
         print("-" * 20)
         # Next iteration
         self._mock_select()
@@ -220,13 +227,12 @@ class TestMonteCarloWithNLG(unittest.TestCase):
         self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 0.3333333333333333)
         # raise
 
-    # def test_random(self):
-    #     print("select: ", self.m.select())
-    #     print("expand: ", self.m.expand())
-    #     evaluation = self.m.simulate()
-    #     print("simul: ", evaluation)
-    #     print("backprop: ", self.m.backpropagate(evaluation))
-    #     raise
+    def test_random_iterations(self):
+        for i in range(20):
+            self.setUp()
+            for i in range(100):
+                self.m.make_iteration()
+            self.tearDown()
 
     def tearDown(self):
         pass
