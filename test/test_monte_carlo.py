@@ -5,10 +5,11 @@ from typing import List
 
 from helper_functions import _assert_almost_equel
 
+from nlg import NLGame
 from src.monte_carlo import MonteCarloTreeSearch
 from src.traveling_tourist import TravelingTourist
 from src.tree import SearchTree
-
+from pprint import pprint
 # fix random seed
 random = Random(42)
 
@@ -82,7 +83,7 @@ class TestMonteCarloWithTSP(unittest.TestCase):
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, None)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 0)
         self.m.backpropagate(evaluation)
-        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 1)
 
@@ -117,16 +118,33 @@ class TestMonteCarloWithTSP(unittest.TestCase):
         self.assertListEqual(self.m.current_path, ["Berlin", "Lisbon", "Hamburg"])
         self.assertListEqual(self.m.current_game.current_game_state, ["Berlin", "Lisbon", "Hamburg"])
 
-        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 1)
         evaluation = self._mock_simulate()
         self.m.backpropagate(evaluation)
-        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["Berlin"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"].passes, 2)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].average_path_value, 8732.433984335672)
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].passes, 1)
+
+    # def test_random_iterations(self):
+        # for i in range(4):
+        #     self.setUp()
+        #     self.m.make_iteration(20)
+        #     self.tearDown()
+    #
+    # def test_best_path(self):
+    #     good_paths = [["Berlin", "Hamburg", "Copenhagen"]]
+    #     self.m.make_iteration(30)
+    #     # import pickle
+    #     # with open("/home/jjb/Desktop/mcts.pickle", 'wb') as handle:
+    #     #     pickle.dump(self.m, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    #     # pprint(self.m.search_tree)
+    #     best_path = self.m.get_best_path()
+    #     self.assertIn(best_path,good_paths)
+
 
     def tearDown(self):
         pass
@@ -134,10 +152,124 @@ class TestMonteCarloWithTSP(unittest.TestCase):
 
 class TestMonteCarloWithNLG(unittest.TestCase):
     def setUp(self):
-        pass
+        nl_game = NLGame(vocabulary=["name", "is", "john", "was", "michael", "my"],
+                         current_game_state=["my"],
+                         starting_word="my")
+        tree = SearchTree()
+        self.m = MonteCarloTreeSearch(game_object=nl_game, tree_object=tree)
+
+    def _mock_select(self):
+        with mock.patch.object(MonteCarloTreeSearch, '_weighted_random_choice', new=patched_weighted_random_choice):
+            current_path = self.m.select()
+        return current_path
+
+    def _mock_expand(self):
+        with mock.patch('random.choice', patched_random_choice):
+            expanded_path = self.m.expand()
+        return expanded_path
+
+    def _mock_simulate(self):
+        with mock.patch('random.choice', patched_random_choice):
+            evaluation = self.m.simulate()
+        return evaluation
+
+    def make_one_iteration_w_mock(self):
+        self._mock_select()
+        self._mock_expand()
+        evaluation = self._mock_simulate()
+        self.m.backpropagate(evaluation)
 
     def test_select(self):
-        pass
+        current_path = self._mock_select()
+        self.assertListEqual(current_path, ["my"])
+        self.assertListEqual(self.m.current_path, ["my"])
+        self.assertListEqual(self.m.current_game.current_game_state, ["my"])
+
+    def test_expand(self):
+        self._mock_select()
+        expanded_path = self._mock_expand()
+        self.assertListEqual(expanded_path, ["my", "name"])
+        self.assertListEqual(self.m.current_path, ["my", "name"])
+
+    def test_simulate(self):
+        self._mock_select()
+        self._mock_expand()
+        evaluation = self._mock_simulate()
+        # simulated_path = ['my', 'name', 'name', 'name', 'name']
+        expected = 1
+        self.assertEqual(expected, evaluation)
+
+    def test_backpropagate(self):
+        self._mock_select()
+        self._mock_expand()
+        evaluation = self._mock_simulate()
+        self.assertEqual(self.m.search_tree["my"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, None)
+        self.assertEqual(self.m.search_tree["my"]["name"].passes, 0)
+        self.m.backpropagate(evaluation)
+        self.assertEqual(self.m.search_tree["my"].average_path_value, 1)
+        self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 1)
+        self.assertEqual(self.m.search_tree["my"]["name"].passes, 1)
+        print("\n" * 2)
+        print("-" * 20)
+        # Next iteration
+        self._mock_select()
+        self._mock_expand()
+        self._mock_simulate()
+        # override with 0
+        self.m.backpropagate(0)
+        self.assertEqual(self.m.search_tree["my"]["name"].passes, 2)
+        self.assertEqual(self.m.search_tree["my"]["name"]["name"].passes, 1)
+        self.assertEqual(self.m.search_tree["my"]["name"]["name"].average_path_value, 0)
+        self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 0.5)
+
+        print("\n" * 2)
+        print("-" * 20)
+        # Next iteration
+        self._mock_select()
+        self._mock_expand()
+        self._mock_simulate()
+        # override with 0
+        self.m.backpropagate(0)
+        self.assertEqual(self.m.search_tree["my"]["name"].passes, 3)
+        self.assertEqual(self.m.search_tree["my"]["name"]["name"].passes, 2)
+        self.assertEqual(self.m.search_tree["my"]["name"]["name"].average_path_value, 0)
+        self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 0.3333333333333333)
+        # raise
+
+    def test_best_path(self):
+        good_sentences = ["my name is john".split(), "my name is michael".split()]
+        self.m.make_iteration(50)
+        # import pickle
+        # with open("/home/jjb/Desktop/mcts.pickle", 'wb') as handle:
+        #     pickle.dump(self.m, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        # pprint(self.m.search_tree)
+        # best_path = self.m.get_best_path()
+        # if best_path not in good_sentences:
+        #     print(best_path, " not in ")
+        #     print("///")
+        #     print("my", self.m.search_tree["my"].average_path_value)
+        #     print("my name", self.m.search_tree["my"]["name"].average_path_value)
+        #     print("my name is", self.m.search_tree["my"]["name"]["is"].average_path_value)
+        #     print("my name is john", self.m.search_tree["my"]["name"]["is"]["john"].average_path_value)
+        #     current = self.m.search_tree["my"]
+        #     for word,truth in zip(best_path, "my name is john".split()):
+        #         if word != truth:
+        #             print(word, "!=", truth )
+        #             print(current[word].average_path_value, " vs. ", current[truth].average_path_value)
+        #             # raise
+        #         else:
+        #             print(word, "==",truth)
+        #             current = current[word]
+        # self.assertIn(best_path,good_sentences)
+
+
+    def test_random_iterations(self):
+        for i in range(20):
+            self.setUp()
+            self.m.make_iteration(100)
+            # print(self.m.game_master.sentence_classifier.log)
+            self.tearDown()
 
     def tearDown(self):
         pass
