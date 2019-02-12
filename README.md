@@ -1,6 +1,6 @@
 # Monte Carlo Tree Search
 
-This repository aims at giving a skeleton for Monte Carlo Tee Search.
+This repository allows to execute the Monte Carlo Tree Search Algorithm on different "games".
 
 Two "games" are being built <br>
 (1) Traveling tourist problem  <br>
