@@ -11,8 +11,8 @@ class NLGame(Game):
         self.possible_moves = vocabulary
         self.current_game_state = current_game_state
         self._check_game_correctly_initiated()
-        self.sentence_classifier = SentenceClassifier()
-        self.sentence_length = 5
+        self.sentence_classifier = SentenceClassifier(acceptance_threshold=1.5, trigram_importance=5)
+        self.sentence_length = 4
 
     def _check_game_correctly_initiated(self):
         duplicates = set([word for word in self.possible_moves if self.possible_moves.count(word) > 1])
@@ -55,6 +55,6 @@ class NLGame(Game):
         return int(self.sentence_classifier.sentence_is_human(self.current_game_state))
 
 if __name__ == "__main__":
-    N = NLGame(vocabulary=["my", "name", "is", "was", "john", "michael"],
+    N = NLGame(vocabulary=["my", "name", "is", "was", "john", "michael", "smith", "miller"],
                current_game_state=["my"],
                starting_word="my")

@@ -1,12 +1,14 @@
 import random
 from typing import List, Tuple, Dict
-
+from typing import Union
 
 class SentenceClassifier(object):
-    def __init__(self):
+    def __init__(self, acceptance_threshold:float=0.7, trigram_importance:Union[int,float]=3):
         self._known_bigrams = None
         self._known_trigrams = None
-        self.acceptence_threshold = 0.2
+        self.acceptance_threshold = acceptance_threshold
+        self.trigram_importance = trigram_importance
+        self.log = {}
 
     @property
     def known_bigrams(self):
@@ -34,9 +36,9 @@ class SentenceClassifier(object):
         """
         features = self.sentence_to_features(word_sequence)
         overlap_scores = self.compute_score_overlap_with_known(bigrams=features["bigrams"], trigrams=features["trigrams"])
-        trigram_importance = 2
-        score = overlap_scores["bigram"] + trigram_importance * overlap_scores["trigram"]
-        return score >= self.acceptence_threshold
+        score = overlap_scores["bigram"] + self.trigram_importance * overlap_scores["trigram"]
+        self.log[" ".join(word_sequence)] = score
+        return score >= self.acceptance_threshold
 
     def compute_score_overlap_with_known(self, bigrams: List[Tuple[str, str]], trigrams: List[Tuple[str, str, str]]) -> Dict:
         score_bigram = sum(list(map(lambda bigram: bigram in self.known_bigrams, bigrams)))/len(bigrams)

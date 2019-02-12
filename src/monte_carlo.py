@@ -1,13 +1,11 @@
 import math
 import random
 from copy import deepcopy
-from pprint import pprint
 from typing import List
 
 from numpy.random import choice
 
 from nlg import NLGame
-from traveling_tourist import TravelingTourist
 from tree import SearchTree
 
 
@@ -17,10 +15,12 @@ class MonteCarloTreeSearch(object):
         self.current_game = deepcopy(game_object)
         self.current_path = [self.game_master.root]
         self.search_tree = tree_object
-        self.upc_coefficient = 1
+        self.upc_coefficient = 1000
         self.total_simulations_run = 0
 
     def compute_upper_confidence_bound(self, average_value: float, n_simul_node: int) -> float:
+        if n_simul_node == 0:
+            return 99 ** 10
         value = average_value + self.upc_coefficient * math.sqrt((math.log(self.total_simulations_run) / n_simul_node))
         if value == 0:
             # TODO: dirty fix?
@@ -35,8 +35,7 @@ class MonteCarloTreeSearch(object):
         self.current_game = deepcopy(self.game_master)
         self.current_path = [self.game_master.root]
         branch = self.search_tree[self.game_master.root]
-        children_ucb = {k: self.compute_upper_confidence_bound(average_value=branch[k].average_path_value, n_simul_node=branch[k].passes)
-                        for k in branch.keys()}
+        children_ucb = {k: self.compute_upper_confidence_bound(average_value=branch[k].average_path_value, n_simul_node=branch[k].passes) for k in branch.keys()}
         sum_ucb = sum(children_ucb.values())
         children_probs = {k: v / sum_ucb for k, v in children_ucb.items()}
 
@@ -53,20 +52,25 @@ class MonteCarloTreeSearch(object):
                 break
         return self.current_path
 
+    def _expand_tree(self, child):
+        path_to_expand = self.current_path + [child]
+        current_leaf = self.search_tree
+        for next_leaf in path_to_expand:
+            current_leaf = current_leaf[next_leaf]
+
     def expand(self):
         # Retrieve possible children
         children = self.current_game.generate_next_moves()
         if not len(children):
             return False
+        for child in children:
+            self._expand_tree(child)
         # Randomly choose one of them
         expansion_child = random.choice(children)
         # Make move
         self.current_game.make_a_move(expansion_child)
         self.current_path.append(expansion_child)
-        # Expand the tree
-        current_leaf = self.search_tree
-        for next_leaf in self.current_path:
-            current_leaf = current_leaf[next_leaf]
+
         return self.current_path
 
     def simulate(self):
@@ -83,6 +87,7 @@ class MonteCarloTreeSearch(object):
             simulated_game.make_a_move(expansion_child)
             simulated_path.append(expansion_child)
         evaluation = simulated_game.evaluate_game()
+        # print("simulated evaluation", simulated_game.sentence_classifier.log)
         self.total_simulations_run += 1
         return evaluation
 
@@ -95,40 +100,36 @@ class MonteCarloTreeSearch(object):
                 current_child.average_path_value = simulation_evaluation
             else:
                 assert current_child != 0
-                current_child.average_path_value = ((current_child.passes - 1)* current_child.average_path_value + simulation_evaluation) / (current_child.passes)
+                current_child.average_path_value = ((current_child.passes - 1) * current_child.average_path_value + simulation_evaluation) / (current_child.passes)
 
-    def make_iteration(self):
-        self.select()
-        self.expand()
-        simulation_evaluation = self.simulate()
-        if isinstance(simulation_evaluation, int):
-            # TODO: Not sure if int is sufficient
-            self.backpropagate(simulation_evaluation)
+    def make_iteration(self, n=1):
+        for i in range(n):
+            self.select()
+            self.expand()
+            simulation_evaluation = self.simulate()
+            if isinstance(simulation_evaluation, int):
+                # TODO: Not sure if int is sufficient
+                self.backpropagate(simulation_evaluation)
 
-    def find_best_path(self):
-        best_path = []
+    def get_best_path(self):
+        best_path = [self.game_master.root]
 
-        def get_best_child(children: List[SearchTree]):
-            child_value_tups = [[child, child.average_path_value] for child in children]
-            if len(child_value_tups):
-                return sorted(child_value_tups, key=lambda tup: tup[1])[0][0]
-            else:
-                return None
-
-        best_child_name = get_best_child(self.search_tree.values())
-        current_node = self.search_tree[best_child_name]
-
-        while best_child_name is not None:
-
-            best_child_name = get_best_child(self.search_tree.values())
-            current_node = self.search_tree[best_child_name]
-
+        current = self.search_tree[self.game_master.root]
+        child_value_pairs = sorted(filter(lambda tup: isinstance(tup[1], float) or isinstance(tup[1], int),
+                                          map(lambda x: [x, current[x].average_path_value], current.keys())),
+                                   key=lambda tup: tup[1], reverse=True)
+        while len(child_value_pairs):
+            best_child_name = child_value_pairs[0][0]
+            best_path.append(best_child_name)
+            current = current[best_child_name]
+            child_value_pairs = sorted(filter(lambda tup: isinstance(tup[1], float) or isinstance(tup[1], int),
+                                              map(lambda x: [x, current[x].average_path_value], current.keys())),
+                                       key=lambda tup: tup[1], reverse=True)
         return best_path
 
     def start(self, rounds=6):
         for i in range(round):
             self.make_iteration()
-
 
 
 if __name__ == "__main__":
@@ -147,6 +148,7 @@ if __name__ == "__main__":
                      starting_word="my")
     tree = SearchTree()
     M = MonteCarloTreeSearch(game_object=nl_game, tree_object=tree)
-    for i in range(5):
-        print("i", i)
-        M.make_iteration()
+    M.make_iteration(100)
+    import ipdb
+
+    ipdb.set_trace()

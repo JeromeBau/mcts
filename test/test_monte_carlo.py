@@ -9,7 +9,7 @@ from nlg import NLGame
 from src.monte_carlo import MonteCarloTreeSearch
 from src.traveling_tourist import TravelingTourist
 from src.tree import SearchTree
-
+from pprint import pprint
 # fix random seed
 random = Random(42)
 
@@ -130,11 +130,21 @@ class TestMonteCarloWithTSP(unittest.TestCase):
         self.assertEqual(self.m.search_tree["Berlin"]["Lisbon"]["Hamburg"].passes, 1)
 
     # def test_random_iterations(self):
-    #     for i in range(10):
-    #         self.m.make_iteration()
+        # for i in range(4):
+        #     self.setUp()
+        #     self.m.make_iteration(20)
+        #     self.tearDown()
     #
-    #     print(self.m.search_tree)
-    #     # raise
+    # def test_best_path(self):
+    #     good_paths = [["Berlin", "Hamburg", "Copenhagen"]]
+    #     self.m.make_iteration(30)
+    #     # import pickle
+    #     # with open("/home/jjb/Desktop/mcts.pickle", 'wb') as handle:
+    #     #     pickle.dump(self.m, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    #     # pprint(self.m.search_tree)
+    #     best_path = self.m.get_best_path()
+    #     self.assertIn(best_path,good_paths)
+
 
     def tearDown(self):
         pass
@@ -227,11 +237,38 @@ class TestMonteCarloWithNLG(unittest.TestCase):
         self.assertEqual(self.m.search_tree["my"]["name"].average_path_value, 0.3333333333333333)
         # raise
 
+    def test_best_path(self):
+        good_sentences = ["my name is john".split(), "my name is michael".split()]
+        self.m.make_iteration(50)
+        # import pickle
+        # with open("/home/jjb/Desktop/mcts.pickle", 'wb') as handle:
+        #     pickle.dump(self.m, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        # pprint(self.m.search_tree)
+        # best_path = self.m.get_best_path()
+        # if best_path not in good_sentences:
+        #     print(best_path, " not in ")
+        #     print("///")
+        #     print("my", self.m.search_tree["my"].average_path_value)
+        #     print("my name", self.m.search_tree["my"]["name"].average_path_value)
+        #     print("my name is", self.m.search_tree["my"]["name"]["is"].average_path_value)
+        #     print("my name is john", self.m.search_tree["my"]["name"]["is"]["john"].average_path_value)
+        #     current = self.m.search_tree["my"]
+        #     for word,truth in zip(best_path, "my name is john".split()):
+        #         if word != truth:
+        #             print(word, "!=", truth )
+        #             print(current[word].average_path_value, " vs. ", current[truth].average_path_value)
+        #             # raise
+        #         else:
+        #             print(word, "==",truth)
+        #             current = current[word]
+        # self.assertIn(best_path,good_sentences)
+
+
     def test_random_iterations(self):
         for i in range(20):
             self.setUp()
-            for i in range(100):
-                self.m.make_iteration()
+            self.m.make_iteration(100)
+            # print(self.m.game_master.sentence_classifier.log)
             self.tearDown()
 
     def tearDown(self):
