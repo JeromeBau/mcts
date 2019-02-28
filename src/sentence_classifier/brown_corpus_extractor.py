@@ -2,7 +2,7 @@ import os
 import re
 from typing import List
 import pandas as pd
-
+import random
 
 class BrownCoprus(object):
     def __init__(self, path_to_brown_corpus_directory: str):
@@ -10,6 +10,7 @@ class BrownCoprus(object):
         self.sentences = []
         self.bigrams = []
         self.trigrams = []
+        self.vocab = None
 
     def save_all(self):
         try:
@@ -62,6 +63,21 @@ class BrownCoprus(object):
         self.trigrams.extend([trip for trip in zip(tokens, tokens[1:], tokens[2:])])
 
 
+    def build_vocab(self):
+        sentences_so_far = pd.read_csv("/home/jjb/Desktop/brown/sentences.csv", header=None)
+        self.vocab = list(set(" ".join(list(sentences_so_far[0])).split()))
+
+    def generate_a_sentence(self):
+        sentence_length = random.randint(4,15)
+        return " ".join(random.choices(self.vocab, k=sentence_length))
+
+    def build_false_data(self, dataset_size=10000):
+        pd.Series([self.generate_a_sentence() for _ in range(dataset_size)]).to_csv("/home/jjb/Desktop/brown/false.csv", header=None, index=None)
+
+
+
 if __name__ == "__main__":
     B = BrownCoprus("/home/jjb/Desktop/brown/brown_tei")
-    B.build_sentences_and_features()
+    # B.build_sentences_and_features()
+    B.build_vocab()
+    B.build_false_data(100)

@@ -12,7 +12,7 @@ class NLGame(Game):
         self.current_game_state = current_game_state
         self._check_game_correctly_initiated()
         self.sentence_classifier = SentenceClassifier(acceptance_threshold=1.5, trigram_importance=5)
-        self.sentence_length = 4
+        self.sentence_length = 5
 
     def _check_game_correctly_initiated(self):
         duplicates = set([word for word in self.possible_moves if self.possible_moves.count(word) > 1])
