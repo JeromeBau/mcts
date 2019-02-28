@@ -110,6 +110,8 @@ class MonteCarloTreeSearch(object):
             if isinstance(simulation_evaluation, int):
                 # TODO: Not sure if int is sufficient
                 self.backpropagate(simulation_evaluation)
+            if i%10==0:
+                print("iteration nr: ", i+1, "/",n)
 
     def get_best_path(self):
         best_path = [self.game_master.root]
@@ -141,14 +143,16 @@ if __name__ == "__main__":
     # for i in range(5):
     #     M.make_iteration()
     # print(M.find_best_path())
-
-
-    nl_game = NLGame(vocabulary=["name", "is", "john", "was", "michael", "my"],
-                     current_game_state=["my"],
-                     starting_word="my")
+    import pandas as pd
+    vocab = list(pd.read_csv("/home/jjb/Dropbox/Programming/GIT/mcts/data/most_common_words.csv", header=None)[0])[:100]
+    print(vocab[:20])
+    nl_game = NLGame(vocabulary=list(set(vocab + ["house", "tree", "is", "big", "tall"])), #["name", "is", "john", "was", "michael", "my"]
+                     current_game_state=["the"],
+                     starting_word="the")
+    nl_game.sentence_length = 5
     tree = SearchTree()
-    M = MonteCarloTreeSearch(game_object=nl_game, tree_object=tree)
-    M.make_iteration(100)
-    import ipdb
 
-    ipdb.set_trace()
+    M = MonteCarloTreeSearch(game_object=nl_game, tree_object=tree)
+    print("sentence length", nl_game.sentence_length)
+    M.make_iteration(1000)
+    print(M.get_best_path())
